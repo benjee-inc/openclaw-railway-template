@@ -54,8 +54,12 @@ RUN apt-get update \
     file \
     git \
     python3 \
+    python3-pip \
     pkg-config \
     sudo \
+    jq \
+    ripgrep \
+    ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Homebrew (must run as non-root user)
@@ -69,6 +73,12 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 USER root
 RUN chown -R root:root /home/linuxbrew/.linuxbrew
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+
+# ── OpenClaw Skills: Homebrew CLI tools ──
+RUN brew install gh gog himalaya summarize yt-dlp
+
+# ── OpenClaw Skills: npm CLI tools ──
+RUN npm install -g @steipete/bird clawhub mcporter
 
 WORKDIR /app
 
