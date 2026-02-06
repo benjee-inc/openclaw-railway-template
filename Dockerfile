@@ -73,13 +73,12 @@ ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}
 
 # ── OpenClaw Skills: Homebrew CLI tools (must run as linuxbrew, not root) ──
 RUN brew install gh himalaya yt-dlp
-# Try summarize from steipete tap (not in core Homebrew)
-RUN brew tap steipete/tap && brew install steipete/tap/summarize || true
 
 USER root
 
 # ── OpenClaw Skills: npm CLI tools ──
-RUN npm install -g @steipete/bird clawhub mcporter
+# summarize brew formula is macOS-only (ARM64 binary), so install via npm instead
+RUN npm install -g @steipete/summarize @steipete/bird clawhub mcporter
 
 WORKDIR /app
 
