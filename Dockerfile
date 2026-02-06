@@ -69,13 +69,12 @@ RUN useradd -m -s /bin/bash linuxbrew \
 
 USER linuxbrew
 RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-USER root
-RUN chown -R root:root /home/linuxbrew/.linuxbrew
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
-# ── OpenClaw Skills: Homebrew CLI tools ──
+# ── OpenClaw Skills: Homebrew CLI tools (must run as linuxbrew, not root) ──
 RUN brew install gh gog himalaya summarize yt-dlp
+
+USER root
 
 # ── OpenClaw Skills: npm CLI tools ──
 RUN npm install -g @steipete/bird clawhub mcporter
