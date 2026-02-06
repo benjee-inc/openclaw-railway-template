@@ -72,7 +72,7 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # ── OpenClaw Skills: Homebrew CLI tools (must run as linuxbrew, not root) ──
-RUN brew install gh himalaya yt-dlp
+RUN brew install gh himalaya summarize yt-dlp
 
 USER root
 
