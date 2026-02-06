@@ -72,7 +72,9 @@ RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.co
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # ── OpenClaw Skills: Homebrew CLI tools (must run as linuxbrew, not root) ──
-RUN brew install gh himalaya summarize yt-dlp
+RUN brew install gh himalaya yt-dlp
+# Try summarize from steipete tap (not in core Homebrew)
+RUN brew tap steipete/tap && brew install steipete/tap/summarize || true
 
 USER root
 
