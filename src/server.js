@@ -220,7 +220,6 @@ async function startGateway() {
       config.auth.profiles["blockrun:default"] = {
         provider: "blockrun",
         mode: "api_key",
-        apiKey: "blockrun-local",
       };
       console.log(`[clawrouter] Added blockrun:default auth profile`);
 
