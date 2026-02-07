@@ -99,6 +99,6 @@ COPY src ./src
 ENV PORT=8080
 EXPOSE 8080
 
-# Install ClawRouter plugin in background on startup (needs volume at /data, can't run at build time)
-# Delayed 90s so gateway starts first — concurrent openclaw commands lock the config file
-CMD ["sh", "-c", "(sleep 90 && openclaw plugins install @blockrun/clawrouter 2>/dev/null || true) & node src/server.js"]
+# Clean any previously installed plugins that break openclaw CLI (ClawRouter hooks all commands)
+# then start the server which eagerly boots the gateway
+CMD ["sh", "-c", "rm -rf /data/.openclaw/plugins 2>/dev/null; node src/server.js"]
