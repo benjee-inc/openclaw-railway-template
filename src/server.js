@@ -188,13 +188,12 @@ async function startGateway() {
         console.error(`[clawrouter] WARNING: @blockrun/clawrouter not found at ${clawSrc}`);
       }
 
-      // Register plugin in config — use plugins.paths array for discovery
-      if (!config.plugins) config.plugins = {};
-      if (!config.plugins.paths) config.plugins.paths = [];
-      if (!config.plugins.paths.includes(extDir)) {
-        config.plugins.paths.push(extDir);
-      }
-      console.log(`[clawrouter] Registered plugin path in config: ${extDir}`);
+      // OpenClaw auto-discovers plugins from extensions dir via openclaw.plugin.json.
+      // No config registration needed — just having the files in place is enough.
+      // Clean up any stale plugin config from previous attempts.
+      if (config.plugins?.entries?.clawrouter) delete config.plugins.entries.clawrouter;
+      if (config.plugins?.paths) delete config.plugins.paths;
+      console.log(`[clawrouter] Extension installed at ${extDir} (auto-discovery)`);
 
       // Backup original agent model and switch to blockrun/auto.
       // OpenClaw migrated agent.model → agents.defaults.model.primary; support both.
@@ -227,24 +226,15 @@ async function startGateway() {
         console.log(`[clawrouter] ClawRouter disabled (USE_CLAWROUTER=${process.env.USE_CLAWROUTER || 'unset'})`);
       }
 
-      // Remove ClawRouter plugin paths and stale entries
-      if (config.plugins?.paths) {
-        config.plugins.paths = config.plugins.paths.filter((p) => {
-          const isClawRouter = p.includes("clawrouter") || p.includes("blockrun");
-          if (isClawRouter) console.log(`[gateway] Removing stale plugin path: ${p}`);
-          return !isClawRouter;
-        });
-        if (config.plugins.paths.length === 0) delete config.plugins.paths;
+      // Clean stale ClawRouter config from previous attempts
+      if (config.plugins?.entries?.clawrouter) {
+        console.log(`[gateway] Removing stale plugin entry: clawrouter`);
+        delete config.plugins.entries.clawrouter;
+        if (Object.keys(config.plugins.entries).length === 0) delete config.plugins.entries;
       }
-      if (config.plugins?.entries) {
-        const entries = config.plugins.entries;
-        for (const key of Object.keys(entries)) {
-          if (key === "clawrouter" || key === "blockrun") {
-            console.log(`[gateway] Removing stale plugin entry: ${key}`);
-            delete entries[key];
-          }
-        }
-        if (Object.keys(entries).length === 0) delete config.plugins.entries;
+      if (config.plugins?.paths) {
+        console.log(`[gateway] Removing invalid plugins.paths key`);
+        delete config.plugins.paths;
       }
 
       // Restore original model if we previously backed it up
