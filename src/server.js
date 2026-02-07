@@ -213,6 +213,17 @@ async function startGateway() {
       if (config.agent) delete config.agent;
       console.log(`[clawrouter] Set agent model to blockrun/auto`);
 
+      // Add auth profile for blockrun provider (ClawRouter local server
+      // doesn't validate API keys, but OpenClaw requires the profile to exist)
+      if (!config.auth) config.auth = {};
+      if (!config.auth.profiles) config.auth.profiles = {};
+      config.auth.profiles["blockrun:default"] = {
+        provider: "blockrun",
+        mode: "api_key",
+        apiKey: "blockrun-local",
+      };
+      console.log(`[clawrouter] Added blockrun:default auth profile`);
+
       // Write wallet key to where ClawRouter expects it
       const walletDir = path.join(STATE_DIR, "blockrun");
       fs.mkdirSync(walletDir, { recursive: true });
@@ -305,6 +316,9 @@ async function startGateway() {
   // Pass wallet key to gateway so ClawRouter can resolve it from env
   if (process.env.BLOCKRUN_WALLET_KEY?.trim()) {
     gatewayEnv.BLOCKRUN_WALLET_KEY = process.env.BLOCKRUN_WALLET_KEY.trim();
+    // ClawRouter local server doesn't validate API keys, but OpenClaw
+    // requires one for the blockrun provider. Set a placeholder.
+    gatewayEnv.BLOCKRUN_API_KEY = "blockrun-local";
   }
 
   gatewayProc = childProcess.spawn(OPENCLAW_NODE, clawArgs(args), {
