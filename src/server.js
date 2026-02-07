@@ -223,47 +223,29 @@ async function startGateway() {
       };
       console.log(`[clawrouter] Added blockrun:default auth profile`);
 
-      // DEBUG: Dump the entire STATE_DIR credential structure to find where
-      // the working Anthropic API key is stored, so we can replicate it for blockrun.
-      const agentsDir = path.join(STATE_DIR, "agents");
-      console.log(`[clawrouter-debug] STATE_DIR contents:`);
-      const dumpDir = (dir, depth = 0) => {
-        if (!fs.existsSync(dir) || depth > 4) return;
-        for (const f of fs.readdirSync(dir)) {
-          const full = path.join(dir, f);
-          const stat = fs.statSync(full);
-          const prefix = "  ".repeat(depth);
-          if (stat.isDirectory()) {
-            console.log(`[clawrouter-debug] ${prefix}${f}/`);
-            dumpDir(full, depth + 1);
-          } else {
-            console.log(`[clawrouter-debug] ${prefix}${f} (${stat.size}b)`);
-            // Read JSON credential files to see their structure
-            if (f.endsWith(".json") && stat.size < 10000 && (f.includes("auth") || f.includes("cred") || f.includes("profile"))) {
-              try {
-                const content = JSON.parse(fs.readFileSync(full, "utf8"));
-                const keys = Object.keys(content);
-                console.log(`[clawrouter-debug] ${prefix}  -> keys: ${JSON.stringify(keys)}`);
-                for (const k of keys) {
-                  const v = content[k];
-                  if (typeof v === "object") {
-                    const redacted = {};
-                    for (const [kk, vv] of Object.entries(v)) {
-                      redacted[kk] = typeof vv === "string" && vv.length > 8 ? vv.slice(0, 4) + "..." : vv;
-                    }
-                    console.log(`[clawrouter-debug] ${prefix}  -> ${k}: ${JSON.stringify(redacted)}`);
-                  }
-                }
-              } catch {}
-            }
-          }
-        }
+      // Write blockrun API key to the main agent auth-profiles.json.
+      // The agents/ directory may not exist yet (gateway creates it on first run),
+      // so we must create it unconditionally.
+      const mainAgentDir = path.join(STATE_DIR, "agents", "main", "agent");
+      const mainProfilePath = path.join(mainAgentDir, "auth-profiles.json");
+      fs.mkdirSync(mainAgentDir, { recursive: true });
+      let mainProfiles = {};
+      if (fs.existsSync(mainProfilePath)) {
+        try { mainProfiles = JSON.parse(fs.readFileSync(mainProfilePath, "utf8")); } catch {}
+      }
+      mainProfiles["blockrun:default"] = {
+        provider: "blockrun",
+        mode: "api_key",
+        apiKey: "blockrun-local",
       };
-      dumpDir(STATE_DIR);
+      fs.writeFileSync(mainProfilePath, JSON.stringify(mainProfiles, null, 2), "utf8");
+      console.log(`[clawrouter] Wrote blockrun API key to ${mainProfilePath}`);
 
-      // Now write blockrun credentials wherever we find the Anthropic ones
+      // Also write to any other existing agent directories
+      const agentsDir = path.join(STATE_DIR, "agents");
       if (fs.existsSync(agentsDir)) {
         for (const agentId of fs.readdirSync(agentsDir)) {
+          if (agentId === "main") continue; // already handled above
           const profileDir = path.join(agentsDir, agentId, "agent");
           const profilePath = path.join(profileDir, "auth-profiles.json");
           let profiles = {};
@@ -402,6 +384,35 @@ async function startGateway() {
   });
 }
 
+// Re-apply blockrun API key to all agent auth-profiles.json after gateway init.
+// The gateway may create/overwrite auth-profiles.json during startup, so we
+// must patch it again once the gateway is ready.
+function patchBlockrunAuth() {
+  const useClawRouter = process.env.USE_CLAWROUTER?.toLowerCase() === "true";
+  if (!useClawRouter) return;
+
+  const agentsDir = path.join(STATE_DIR, "agents");
+  if (!fs.existsSync(agentsDir)) return;
+
+  for (const agentId of fs.readdirSync(agentsDir)) {
+    const profileDir = path.join(agentsDir, agentId, "agent");
+    const profilePath = path.join(profileDir, "auth-profiles.json");
+    if (!fs.existsSync(profileDir)) continue;
+    let profiles = {};
+    if (fs.existsSync(profilePath)) {
+      try { profiles = JSON.parse(fs.readFileSync(profilePath, "utf8")); } catch {}
+    }
+    if (profiles["blockrun:default"]?.apiKey) continue; // already has it
+    profiles["blockrun:default"] = {
+      provider: "blockrun",
+      mode: "api_key",
+      apiKey: "blockrun-local",
+    };
+    fs.writeFileSync(profilePath, JSON.stringify(profiles, null, 2), "utf8");
+    console.log(`[clawrouter] Post-ready: patched blockrun API key in ${profilePath}`);
+  }
+}
+
 async function ensureGatewayRunning() {
   if (!isConfigured()) return { ok: false, reason: "not configured" };
   if (gatewayProc) return { ok: true };
@@ -412,6 +423,9 @@ async function ensureGatewayRunning() {
       if (!ready) {
         throw new Error("Gateway did not become ready in time");
       }
+      // After gateway is ready, re-patch blockrun auth in case gateway
+      // overwrote auth-profiles.json during its initialization.
+      patchBlockrunAuth();
     })().finally(() => {
       gatewayStarting = null;
     });
