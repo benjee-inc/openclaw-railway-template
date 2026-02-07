@@ -78,7 +78,7 @@ USER root
 
 # ── OpenClaw Skills: npm CLI tools ──
 # summarize brew formula is macOS-only (ARM64 binary), so install via npm instead
-RUN npm install -g @steipete/summarize @steipete/bird clawhub mcporter
+RUN npm install -g @steipete/summarize @steipete/bird clawhub mcporter twitter-api-v2
 
 WORKDIR /app
 
@@ -95,6 +95,10 @@ RUN printf '%s\n' '#!/usr/bin/env bash' 'exec node /openclaw/dist/entry.js "$@"'
   && chmod +x /usr/local/bin/openclaw
 
 COPY src ./src
+
+# Install custom skill CLIs
+RUN chmod +x /app/src/skills/x-api/x-api.mjs \
+  && ln -sf /app/src/skills/x-api/x-api.mjs /usr/local/bin/x-api
 
 ENV PORT=8080
 EXPOSE 8080
