@@ -100,5 +100,6 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Clean any previously installed plugins that break openclaw CLI (ClawRouter hooks all commands)
+# Plugins may be in state dir (/data/.openclaw), home dir (/root/.openclaw), or openclaw install dir
 # then start the server which eagerly boots the gateway
-CMD ["sh", "-c", "rm -rf /data/.openclaw/plugins 2>/dev/null; node src/server.js"]
+CMD ["sh", "-c", "echo '[boot] Searching for plugin dirs...' && find /data /root /openclaw -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] removing $d\"; rm -rf \"$d\"; done && echo '[boot] Plugin cleanup done' && node src/server.js"]
