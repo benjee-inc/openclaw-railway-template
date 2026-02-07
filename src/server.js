@@ -161,14 +161,87 @@ async function startGateway() {
 
     config.gateway.auth.token = OPENCLAW_GATEWAY_TOKEN;
 
-    // Remove any plugin entries from config that reference deleted plugins.
-    // ClawRouter plugin files are cleaned at boot, but config references persist
-    // and cause "plugin not found" errors that crash the gateway.
-    if (config.plugins?.entries) {
-      const removed = Object.keys(config.plugins.entries);
-      if (removed.length > 0) {
-        console.log(`[gateway] Removing stale plugin entries from config: ${removed.join(", ")}`);
-        delete config.plugins.entries;
+    // ── ClawRouter conditional setup ──
+    const useClawRouter = process.env.USE_CLAWROUTER?.toLowerCase() === "true";
+    const walletKey = process.env.BLOCKRUN_WALLET_KEY?.trim();
+
+    if (useClawRouter && walletKey) {
+      console.log(`[clawrouter] USE_CLAWROUTER=true, setting up ClawRouter extension...`);
+
+      // Copy ClawRouter from npm global install to OpenClaw extensions dir
+      const clawSrc = "/usr/local/lib/node_modules/@blockrun/clawrouter";
+      const extDir = path.join(STATE_DIR, "extensions", "clawrouter");
+      if (fs.existsSync(clawSrc)) {
+        fs.mkdirSync(extDir, { recursive: true });
+        // Copy all files from the npm package
+        for (const file of fs.readdirSync(clawSrc)) {
+          const srcFile = path.join(clawSrc, file);
+          const dstFile = path.join(extDir, file);
+          if (fs.statSync(srcFile).isDirectory()) {
+            fs.cpSync(srcFile, dstFile, { recursive: true, force: true });
+          } else {
+            fs.copyFileSync(srcFile, dstFile);
+          }
+        }
+        console.log(`[clawrouter] Copied extension to ${extDir}`);
+      } else {
+        console.error(`[clawrouter] WARNING: @blockrun/clawrouter not found at ${clawSrc}`);
+      }
+
+      // Register plugin entry in config
+      if (!config.plugins) config.plugins = {};
+      if (!config.plugins.entries) config.plugins.entries = {};
+      config.plugins.entries.clawrouter = {
+        path: extDir,
+        enabled: true,
+      };
+      console.log(`[clawrouter] Registered plugin entry in config`);
+
+      // Backup original agent model and switch to blockrun/auto
+      const currentModel = config.agent?.model;
+      if (currentModel && currentModel !== "blockrun/auto") {
+        if (!config._clawrouter) config._clawrouter = {};
+        config._clawrouter.originalModel = currentModel;
+        console.log(`[clawrouter] Backed up original model: ${currentModel}`);
+      }
+      if (!config.agent) config.agent = {};
+      config.agent.model = "blockrun/auto";
+      console.log(`[clawrouter] Set agent model to blockrun/auto`);
+
+      // Write wallet key to where ClawRouter expects it
+      const walletDir = path.join(STATE_DIR, "blockrun");
+      fs.mkdirSync(walletDir, { recursive: true });
+      fs.writeFileSync(path.join(walletDir, "wallet.key"), walletKey, { encoding: "utf8", mode: 0o600 });
+      console.log(`[clawrouter] Wrote wallet key to ${walletDir}/wallet.key`);
+
+    } else {
+      if (useClawRouter && !walletKey) {
+        console.warn(`[clawrouter] USE_CLAWROUTER=true but BLOCKRUN_WALLET_KEY not set, skipping ClawRouter`);
+      } else {
+        console.log(`[clawrouter] ClawRouter disabled (USE_CLAWROUTER=${process.env.USE_CLAWROUTER || 'unset'})`);
+      }
+
+      // Remove plugin entries that reference filesystem paths (actual plugins like ClawRouter).
+      // Keep non-plugin entries (e.g. channels like telegram) that OpenClaw also stores here.
+      if (config.plugins?.entries) {
+        const entries = config.plugins.entries;
+        const toRemove = Object.keys(entries).filter((k) => entries[k]?.path);
+        for (const key of toRemove) {
+          console.log(`[gateway] Removing stale plugin entry from config: ${key}`);
+          delete entries[key];
+        }
+        if (Object.keys(entries).length === 0) {
+          delete config.plugins.entries;
+        }
+      }
+
+      // Restore original model if we previously backed it up
+      if (config._clawrouter?.originalModel) {
+        const restored = config._clawrouter.originalModel;
+        if (!config.agent) config.agent = {};
+        config.agent.model = restored;
+        delete config._clawrouter;
+        console.log(`[clawrouter] Restored original model: ${restored}`);
       }
     }
 
@@ -208,13 +281,19 @@ async function startGateway() {
     OPENCLAW_GATEWAY_TOKEN,
   ];
 
+  const gatewayEnv = {
+    ...process.env,
+    OPENCLAW_STATE_DIR: STATE_DIR,
+    OPENCLAW_WORKSPACE_DIR: WORKSPACE_DIR,
+  };
+  // Pass wallet key to gateway so ClawRouter can resolve it from env
+  if (process.env.BLOCKRUN_WALLET_KEY?.trim()) {
+    gatewayEnv.BLOCKRUN_WALLET_KEY = process.env.BLOCKRUN_WALLET_KEY.trim();
+  }
+
   gatewayProc = childProcess.spawn(OPENCLAW_NODE, clawArgs(args), {
     stdio: "inherit",
-    env: {
-      ...process.env,
-      OPENCLAW_STATE_DIR: STATE_DIR,
-      OPENCLAW_WORKSPACE_DIR: WORKSPACE_DIR,
-    },
+    env: gatewayEnv,
   });
 
   console.log(`[gateway] starting with command: ${OPENCLAW_NODE} ${clawArgs(args).join(" ")}`);
