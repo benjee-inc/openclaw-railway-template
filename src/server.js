@@ -250,6 +250,17 @@ async function startGateway() {
       }
     }
 
+    // Ensure channel entries in plugins.entries stay enabled (they can get
+    // disabled by stale config from failed deploys or plugin cleanup).
+    if (config.plugins?.entries) {
+      for (const [name, entry] of Object.entries(config.plugins.entries)) {
+        if (config.channels?.[name] && entry.enabled === false) {
+          console.log(`[gateway] Re-enabling plugins.entries.${name} (was disabled)`);
+          entry.enabled = true;
+        }
+      }
+    }
+
     fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2), "utf8");
 
     // Verify
