@@ -145,45 +145,41 @@ async function startGateway() {
   fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
 
   // Sync wrapper token to openclaw.json before every gateway start.
-  // This ensures the gateway's config-file token matches what the wrapper injects via proxy.
+  // Write directly to JSON file instead of using `openclaw config set` CLI,
+  // because plugins (e.g. ClawRouter) hook into all openclaw commands and
+  // can prevent the process from exiting, hanging the gateway startup forever.
   console.log(`[gateway] ========== GATEWAY START TOKEN SYNC ==========`);
-  console.log(`[gateway] Syncing wrapper token to config: ${OPENCLAW_GATEWAY_TOKEN.slice(0, 16)}... (len: ${OPENCLAW_GATEWAY_TOKEN.length})`);
+  console.log(`[gateway] Syncing wrapper token to config (direct JSON write): ${OPENCLAW_GATEWAY_TOKEN.slice(0, 16)}... (len: ${OPENCLAW_GATEWAY_TOKEN.length})`);
 
-  const syncResult = await runCmd(
-    OPENCLAW_NODE,
-    clawArgs(["config", "set", "gateway.auth.token", OPENCLAW_GATEWAY_TOKEN]),
-  );
-
-  console.log(`[gateway] Sync result: exit code ${syncResult.code}`);
-  if (syncResult.output?.trim()) {
-    console.log(`[gateway] Sync output: ${syncResult.output}`);
-  }
-
-  if (syncResult.code !== 0) {
-    console.error(`[gateway] ⚠️  WARNING: Token sync failed with code ${syncResult.code}`);
-  }
-
-  // Verify sync succeeded
   try {
-    const config = JSON.parse(fs.readFileSync(configPath(), "utf8"));
-    const configToken = config?.gateway?.auth?.token;
+    const cfgPath = configPath();
+    const config = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+
+    // Ensure nested structure exists
+    if (!config.gateway) config.gateway = {};
+    if (!config.gateway.auth) config.gateway.auth = {};
+
+    config.gateway.auth.token = OPENCLAW_GATEWAY_TOKEN;
+
+    fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2), "utf8");
+
+    // Verify
+    const verify = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+    const configToken = verify?.gateway?.auth?.token;
 
     console.log(`[gateway] Token verification:`);
     console.log(`[gateway]   Wrapper: ${OPENCLAW_GATEWAY_TOKEN.slice(0, 16)}... (len: ${OPENCLAW_GATEWAY_TOKEN.length})`);
     console.log(`[gateway]   Config:  ${configToken?.slice(0, 16)}... (len: ${configToken?.length || 0})`);
 
     if (configToken !== OPENCLAW_GATEWAY_TOKEN) {
-      console.error(`[gateway] ✗ Token mismatch detected!`);
-      console.error(`[gateway]   Full wrapper: ${OPENCLAW_GATEWAY_TOKEN}`);
-      console.error(`[gateway]   Full config:  ${configToken || 'null'}`);
       throw new Error(
-        `Token mismatch: wrapper has ${OPENCLAW_GATEWAY_TOKEN.slice(0, 16)}... but config has ${(configToken || 'null')?.slice?.(0, 16)}...`
+        `Token mismatch after write: wrapper=${OPENCLAW_GATEWAY_TOKEN.slice(0, 16)}... config=${(configToken || 'null')?.slice?.(0, 16)}...`
       );
     }
-    console.log(`[gateway] ✓ Token verification PASSED`);
+    console.log(`[gateway] ✓ Token sync + verification PASSED`);
   } catch (err) {
-    console.error(`[gateway] ERROR: Token verification failed: ${err}`);
-    throw err; // Don't start gateway with mismatched token
+    console.error(`[gateway] ERROR: Token sync failed: ${err}`);
+    throw err;
   }
 
   console.log(`[gateway] ========== TOKEN SYNC COMPLETE ==========`);
