@@ -99,5 +99,6 @@ COPY src ./src
 ENV PORT=8080
 EXPOSE 8080
 
-# Install ClawRouter plugin on startup (needs volume at /data, so can't run at build time)
-CMD ["sh", "-c", "openclaw plugins install @blockrun/clawrouter 2>/dev/null || true; node src/server.js"]
+# Install ClawRouter plugin in background on startup (needs volume at /data, can't run at build time)
+# Backgrounded with & so the server starts immediately and passes healthchecks
+CMD ["sh", "-c", "(openclaw plugins install @blockrun/clawrouter 2>/dev/null || true) & node src/server.js"]
