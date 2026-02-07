@@ -99,7 +99,7 @@ COPY src ./src
 ENV PORT=8080
 EXPOSE 8080
 
-# Clean any previously installed plugins that break openclaw CLI (ClawRouter hooks all commands)
-# Plugins may be in state dir (/data/.openclaw), home dir (/root/.openclaw), or openclaw install dir
-# then start the server which eagerly boots the gateway
-CMD ["sh", "-c", "echo '[boot] Searching for ClawRouter/plugin artifacts...' && find /data /root /openclaw -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] rm dir: $d\"; rm -rf \"$d\"; done && find / -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && echo '[boot] Cleanup done' && node src/server.js"]
+# Clean ClawRouter plugin artifacts from persistent volume and home dir.
+# ONLY search /data and /root — do NOT search /openclaw (would break @buape/carbon/dist/src/plugins).
+# Then start the server which eagerly boots the gateway via direct JSON token sync (no CLI).
+CMD ["sh", "-c", "echo '[boot] Cleaning ClawRouter artifacts...' && find /data /root -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] rm dir: $d\"; rm -rf \"$d\"; done && find /data /root -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && echo '[boot] Cleanup done' && node src/server.js"]
