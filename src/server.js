@@ -223,12 +223,33 @@ async function startGateway() {
       };
       console.log(`[clawrouter] Added blockrun:default auth profile`);
 
-      // OpenClaw resolves API keys from the config `env` section.
-      // ClawRouter local server doesn't validate API keys, but OpenClaw
-      // requires one to exist for the blockrun provider.
+      // Write blockrun API key to per-agent auth-profiles.json files.
+      // OpenClaw resolves provider credentials from these files, not from
+      // the config env section. ClawRouter doesn't validate API keys.
+      const agentsDir = path.join(STATE_DIR, "agents");
+      if (fs.existsSync(agentsDir)) {
+        for (const agentId of fs.readdirSync(agentsDir)) {
+          const profileDir = path.join(agentsDir, agentId, "agent");
+          const profilePath = path.join(profileDir, "auth-profiles.json");
+          let profiles = {};
+          if (fs.existsSync(profilePath)) {
+            try { profiles = JSON.parse(fs.readFileSync(profilePath, "utf8")); } catch {}
+          }
+          profiles["blockrun:default"] = {
+            provider: "blockrun",
+            mode: "api_key",
+            apiKey: "blockrun-local",
+          };
+          fs.mkdirSync(profileDir, { recursive: true });
+          fs.writeFileSync(profilePath, JSON.stringify(profiles, null, 2), "utf8");
+          console.log(`[clawrouter] Wrote blockrun API key to ${profilePath}`);
+        }
+      } else {
+        console.log(`[clawrouter] No agents dir yet, will set API key via env fallback`);
+      }
+      // Also set env var as fallback
       if (!config.env) config.env = {};
       config.env.BLOCKRUN_API_KEY = "blockrun-local";
-      console.log(`[clawrouter] Set env.BLOCKRUN_API_KEY in config`);
 
       // Write wallet key to where ClawRouter expects it
       const walletDir = path.join(STATE_DIR, "blockrun");
