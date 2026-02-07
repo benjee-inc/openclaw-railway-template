@@ -223,6 +223,13 @@ async function startGateway() {
       };
       console.log(`[clawrouter] Added blockrun:default auth profile`);
 
+      // OpenClaw resolves API keys from the config `env` section.
+      // ClawRouter local server doesn't validate API keys, but OpenClaw
+      // requires one to exist for the blockrun provider.
+      if (!config.env) config.env = {};
+      config.env.BLOCKRUN_API_KEY = "blockrun-local";
+      console.log(`[clawrouter] Set env.BLOCKRUN_API_KEY in config`);
+
       // Write wallet key to where ClawRouter expects it
       const walletDir = path.join(STATE_DIR, "blockrun");
       fs.mkdirSync(walletDir, { recursive: true });
