@@ -105,5 +105,6 @@ EXPOSE 8080
 
 # Clean ClawRouter plugin artifacts from persistent volume and home dir.
 # ONLY search /data and /root — do NOT search /openclaw (would break @buape/carbon/dist/src/plugins).
+# Copy custom skills to workspace so OpenClaw can discover them.
 # Then start the server which eagerly boots the gateway via direct JSON token sync (no CLI).
-CMD ["sh", "-c", "echo '[boot] Cleaning ClawRouter artifacts...' && find /data /root -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] rm dir: $d\"; rm -rf \"$d\"; done && find /data /root -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && echo '[boot] Cleanup done' && node src/server.js"]
+CMD ["sh", "-c", "echo '[boot] Cleaning ClawRouter artifacts...' && find /data /root -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] rm dir: $d\"; rm -rf \"$d\"; done && find /data /root -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && echo '[boot] Cleanup done' && echo '[boot] Installing custom skills...' && mkdir -p /data/.openclaw/skills && cp -r /app/src/skills/* /data/.openclaw/skills/ 2>/dev/null && echo '[boot] Custom skills installed' && node src/server.js"]
