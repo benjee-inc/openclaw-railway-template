@@ -197,15 +197,22 @@ async function startGateway() {
       };
       console.log(`[clawrouter] Registered plugin entry in config`);
 
-      // Backup original agent model and switch to blockrun/auto
-      const currentModel = config.agent?.model;
+      // Backup original agent model and switch to blockrun/auto.
+      // OpenClaw migrated agent.model → agents.defaults.model.primary; support both.
+      const currentModel =
+        config.agents?.defaults?.model?.primary || config.agent?.model;
       if (currentModel && currentModel !== "blockrun/auto") {
         if (!config._clawrouter) config._clawrouter = {};
         config._clawrouter.originalModel = currentModel;
         console.log(`[clawrouter] Backed up original model: ${currentModel}`);
       }
-      if (!config.agent) config.agent = {};
-      config.agent.model = "blockrun/auto";
+      // Write to the new config path
+      if (!config.agents) config.agents = {};
+      if (!config.agents.defaults) config.agents.defaults = {};
+      if (!config.agents.defaults.model) config.agents.defaults.model = {};
+      config.agents.defaults.model.primary = "blockrun/auto";
+      // Remove legacy key to avoid "Config invalid" error
+      if (config.agent?.model) delete config.agent.model;
       console.log(`[clawrouter] Set agent model to blockrun/auto`);
 
       // Write wallet key to where ClawRouter expects it
@@ -238,8 +245,11 @@ async function startGateway() {
       // Restore original model if we previously backed it up
       if (config._clawrouter?.originalModel) {
         const restored = config._clawrouter.originalModel;
-        if (!config.agent) config.agent = {};
-        config.agent.model = restored;
+        if (!config.agents) config.agents = {};
+        if (!config.agents.defaults) config.agents.defaults = {};
+        if (!config.agents.defaults.model) config.agents.defaults.model = {};
+        config.agents.defaults.model.primary = restored;
+        if (config.agent?.model) delete config.agent.model;
         delete config._clawrouter;
         console.log(`[clawrouter] Restored original model: ${restored}`);
       }
