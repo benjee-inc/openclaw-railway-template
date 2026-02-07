@@ -226,19 +226,29 @@ async function startGateway() {
       // Write blockrun API key to the main agent auth-profiles.json.
       // The agents/ directory may not exist yet (gateway creates it on first run),
       // so we must create it unconditionally.
+      // Format: {"version":1,"profiles":{"blockrun:default":{"type":"api_key","provider":"blockrun","key":"..."}}}
       const mainAgentDir = path.join(STATE_DIR, "agents", "main", "agent");
       const mainProfilePath = path.join(mainAgentDir, "auth-profiles.json");
       fs.mkdirSync(mainAgentDir, { recursive: true });
-      let mainProfiles = {};
+      let mainStore = { version: 1, profiles: {} };
       if (fs.existsSync(mainProfilePath)) {
-        try { mainProfiles = JSON.parse(fs.readFileSync(mainProfilePath, "utf8")); } catch {}
+        try {
+          const existing = JSON.parse(fs.readFileSync(mainProfilePath, "utf8"));
+          // Handle both wrapped and flat formats
+          if (existing.profiles && typeof existing.profiles === "object") {
+            mainStore = existing;
+          } else {
+            // Legacy flat format — migrate into wrapped structure
+            mainStore.profiles = existing;
+          }
+        } catch {}
       }
-      mainProfiles["blockrun:default"] = {
+      mainStore.profiles["blockrun:default"] = {
+        type: "api_key",
         provider: "blockrun",
-        mode: "api_key",
-        apiKey: "blockrun-local",
+        key: "blockrun-local",
       };
-      fs.writeFileSync(mainProfilePath, JSON.stringify(mainProfiles, null, 2), "utf8");
+      fs.writeFileSync(mainProfilePath, JSON.stringify(mainStore, null, 2), "utf8");
       console.log(`[clawrouter] Wrote blockrun API key to ${mainProfilePath}`);
 
       // Also write to any other existing agent directories
@@ -248,20 +258,35 @@ async function startGateway() {
           if (agentId === "main") continue; // already handled above
           const profileDir = path.join(agentsDir, agentId, "agent");
           const profilePath = path.join(profileDir, "auth-profiles.json");
-          let profiles = {};
+          let store = { version: 1, profiles: {} };
           if (fs.existsSync(profilePath)) {
-            try { profiles = JSON.parse(fs.readFileSync(profilePath, "utf8")); } catch {}
+            try {
+              const existing = JSON.parse(fs.readFileSync(profilePath, "utf8"));
+              if (existing.profiles && typeof existing.profiles === "object") {
+                store = existing;
+              } else {
+                store.profiles = existing;
+              }
+            } catch {}
           }
-          profiles["blockrun:default"] = {
+          store.profiles["blockrun:default"] = {
+            type: "api_key",
             provider: "blockrun",
-            mode: "api_key",
-            apiKey: "blockrun-local",
+            key: "blockrun-local",
           };
           fs.mkdirSync(profileDir, { recursive: true });
-          fs.writeFileSync(profilePath, JSON.stringify(profiles, null, 2), "utf8");
+          fs.writeFileSync(profilePath, JSON.stringify(store, null, 2), "utf8");
           console.log(`[clawrouter] Wrote blockrun API key to ${profilePath}`);
         }
       }
+
+      // Also set config fallback: models.providers.blockrun.apiKey
+      // OpenClaw checks this as step 5 in the API key resolution chain.
+      if (!config.models) config.models = {};
+      if (!config.models.providers) config.models.providers = {};
+      if (!config.models.providers.blockrun) config.models.providers.blockrun = {};
+      config.models.providers.blockrun.apiKey = "blockrun-local";
+      console.log(`[clawrouter] Set config models.providers.blockrun.apiKey fallback`);
       // Also set env var as fallback
       if (!config.env) config.env = {};
       config.env.BLOCKRUN_API_KEY = "blockrun-local";
@@ -398,17 +423,26 @@ function patchBlockrunAuth() {
     const profileDir = path.join(agentsDir, agentId, "agent");
     const profilePath = path.join(profileDir, "auth-profiles.json");
     if (!fs.existsSync(profileDir)) continue;
-    let profiles = {};
+    let store = { version: 1, profiles: {} };
     if (fs.existsSync(profilePath)) {
-      try { profiles = JSON.parse(fs.readFileSync(profilePath, "utf8")); } catch {}
+      try {
+        const existing = JSON.parse(fs.readFileSync(profilePath, "utf8"));
+        if (existing.profiles && typeof existing.profiles === "object") {
+          store = existing;
+        } else {
+          store.profiles = existing;
+        }
+      } catch {}
     }
-    if (profiles["blockrun:default"]?.apiKey) continue; // already has it
-    profiles["blockrun:default"] = {
+    // Check if blockrun entry exists with correct format (type+key, not mode+apiKey)
+    const existing = store.profiles["blockrun:default"];
+    if (existing?.type === "api_key" && existing?.key) continue; // already correct
+    store.profiles["blockrun:default"] = {
+      type: "api_key",
       provider: "blockrun",
-      mode: "api_key",
-      apiKey: "blockrun-local",
+      key: "blockrun-local",
     };
-    fs.writeFileSync(profilePath, JSON.stringify(profiles, null, 2), "utf8");
+    fs.writeFileSync(profilePath, JSON.stringify(store, null, 2), "utf8");
     console.log(`[clawrouter] Post-ready: patched blockrun API key in ${profilePath}`);
   }
 }
