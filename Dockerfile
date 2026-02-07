@@ -102,4 +102,4 @@ EXPOSE 8080
 # Clean any previously installed plugins that break openclaw CLI (ClawRouter hooks all commands)
 # Plugins may be in state dir (/data/.openclaw), home dir (/root/.openclaw), or openclaw install dir
 # then start the server which eagerly boots the gateway
-CMD ["sh", "-c", "echo '[boot] Searching for plugin dirs...' && find /data /root /openclaw -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] removing $d\"; rm -rf \"$d\"; done && echo '[boot] Plugin cleanup done' && node src/server.js"]
+CMD ["sh", "-c", "echo '[boot] Searching for ClawRouter/plugin artifacts...' && find /data /root /openclaw -type d -name plugins 2>/dev/null | while read d; do echo \"[boot] rm dir: $d\"; rm -rf \"$d\"; done && find / -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) -not -path '/proc/*' -not -path '/sys/*' 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && echo '[boot] Cleanup done' && node src/server.js"]
