@@ -161,6 +161,17 @@ async function startGateway() {
 
     config.gateway.auth.token = OPENCLAW_GATEWAY_TOKEN;
 
+    // Remove any plugin entries from config that reference deleted plugins.
+    // ClawRouter plugin files are cleaned at boot, but config references persist
+    // and cause "plugin not found" errors that crash the gateway.
+    if (config.plugins?.entries) {
+      const removed = Object.keys(config.plugins.entries);
+      if (removed.length > 0) {
+        console.log(`[gateway] Removing stale plugin entries from config: ${removed.join(", ")}`);
+        delete config.plugins.entries;
+      }
+    }
+
     fs.writeFileSync(cfgPath, JSON.stringify(config, null, 2), "utf8");
 
     // Verify
