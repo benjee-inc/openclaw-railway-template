@@ -100,5 +100,5 @@ ENV PORT=8080
 EXPOSE 8080
 
 # Install ClawRouter plugin in background on startup (needs volume at /data, can't run at build time)
-# Backgrounded with & so the server starts immediately and passes healthchecks
-CMD ["sh", "-c", "(openclaw plugins install @blockrun/clawrouter 2>/dev/null || true) & node src/server.js"]
+# Delayed 90s so gateway starts first — concurrent openclaw commands lock the config file
+CMD ["sh", "-c", "(sleep 90 && openclaw plugins install @blockrun/clawrouter 2>/dev/null || true) & node src/server.js"]
