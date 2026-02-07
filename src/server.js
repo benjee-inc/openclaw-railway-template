@@ -223,10 +223,45 @@ async function startGateway() {
       };
       console.log(`[clawrouter] Added blockrun:default auth profile`);
 
-      // Write blockrun API key to per-agent auth-profiles.json files.
-      // OpenClaw resolves provider credentials from these files, not from
-      // the config env section. ClawRouter doesn't validate API keys.
+      // DEBUG: Dump the entire STATE_DIR credential structure to find where
+      // the working Anthropic API key is stored, so we can replicate it for blockrun.
       const agentsDir = path.join(STATE_DIR, "agents");
+      console.log(`[clawrouter-debug] STATE_DIR contents:`);
+      const dumpDir = (dir, depth = 0) => {
+        if (!fs.existsSync(dir) || depth > 4) return;
+        for (const f of fs.readdirSync(dir)) {
+          const full = path.join(dir, f);
+          const stat = fs.statSync(full);
+          const prefix = "  ".repeat(depth);
+          if (stat.isDirectory()) {
+            console.log(`[clawrouter-debug] ${prefix}${f}/`);
+            dumpDir(full, depth + 1);
+          } else {
+            console.log(`[clawrouter-debug] ${prefix}${f} (${stat.size}b)`);
+            // Read JSON credential files to see their structure
+            if (f.endsWith(".json") && stat.size < 10000 && (f.includes("auth") || f.includes("cred") || f.includes("profile"))) {
+              try {
+                const content = JSON.parse(fs.readFileSync(full, "utf8"));
+                const keys = Object.keys(content);
+                console.log(`[clawrouter-debug] ${prefix}  -> keys: ${JSON.stringify(keys)}`);
+                for (const k of keys) {
+                  const v = content[k];
+                  if (typeof v === "object") {
+                    const redacted = {};
+                    for (const [kk, vv] of Object.entries(v)) {
+                      redacted[kk] = typeof vv === "string" && vv.length > 8 ? vv.slice(0, 4) + "..." : vv;
+                    }
+                    console.log(`[clawrouter-debug] ${prefix}  -> ${k}: ${JSON.stringify(redacted)}`);
+                  }
+                }
+              } catch {}
+            }
+          }
+        }
+      };
+      dumpDir(STATE_DIR);
+
+      // Now write blockrun credentials wherever we find the Anthropic ones
       if (fs.existsSync(agentsDir)) {
         for (const agentId of fs.readdirSync(agentsDir)) {
           const profileDir = path.join(agentsDir, agentId, "agent");
@@ -244,8 +279,6 @@ async function startGateway() {
           fs.writeFileSync(profilePath, JSON.stringify(profiles, null, 2), "utf8");
           console.log(`[clawrouter] Wrote blockrun API key to ${profilePath}`);
         }
-      } else {
-        console.log(`[clawrouter] No agents dir yet, will set API key via env fallback`);
       }
       // Also set env var as fallback
       if (!config.env) config.env = {};
