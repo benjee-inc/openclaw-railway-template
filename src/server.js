@@ -924,6 +924,14 @@ const server = app.listen(PORT, () => {
   console.log(`[wrapper] listening on port ${PORT}`);
   console.log(`[wrapper] setup wizard: http://localhost:${PORT}/setup`);
   console.log(`[wrapper] configured: ${isConfigured()}`);
+
+  // Eagerly start gateway on boot so it's ready before ClawRouter plugin installs
+  // (plugin hooks into all openclaw commands and prevents them from exiting)
+  if (isConfigured()) {
+    ensureGatewayRunning().catch((err) =>
+      console.error(`[gateway] eager start failed: ${err}`)
+    );
+  }
 });
 
 // Handle WebSocket upgrades
