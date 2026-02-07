@@ -211,8 +211,8 @@ async function startGateway() {
       if (!config.agents.defaults) config.agents.defaults = {};
       if (!config.agents.defaults.model) config.agents.defaults.model = {};
       config.agents.defaults.model.primary = "blockrun/auto";
-      // Remove legacy key to avoid "Config invalid" error
-      if (config.agent?.model) delete config.agent.model;
+      // Remove entire legacy agent.* key to avoid "Config invalid" error
+      if (config.agent) delete config.agent;
       console.log(`[clawrouter] Set agent model to blockrun/auto`);
 
       // Write wallet key to where ClawRouter expects it
@@ -249,7 +249,7 @@ async function startGateway() {
         if (!config.agents.defaults) config.agents.defaults = {};
         if (!config.agents.defaults.model) config.agents.defaults.model = {};
         config.agents.defaults.model.primary = restored;
-        if (config.agent?.model) delete config.agent.model;
+        if (config.agent) delete config.agent;
         delete config._clawrouter;
         console.log(`[clawrouter] Restored original model: ${restored}`);
       }
