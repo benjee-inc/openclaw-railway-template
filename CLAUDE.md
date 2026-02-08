@@ -98,6 +98,23 @@ open http://localhost:8080/setup  # password: test
 - `INTERNAL_GATEWAY_PORT` — gateway internal port (default 18789)
 - `OPENCLAW_ENTRY` — path to `entry.js` (default `/openclaw/dist/entry.js`)
 
+### LLM Provider Feature Flags
+
+Two optional feature flags allow switching the LLM provider away from the default configured during onboarding:
+
+1. **ClawRouter** (`USE_CLAWROUTER=true`) — Multi-model routing via x402 micropayments. Requires `BLOCKRUN_WALLET_KEY`. Installs a local extension.
+2. **OpenRouter** (`USE_OPENROUTER=true`) — Routes through OpenRouter API (e.g., Kimi K2). Requires `OPENROUTER_API_KEY`. No extensions needed — OpenClaw reads the key natively from env.
+
+**Priority**: ClawRouter > OpenRouter > default. If both flags are true, ClawRouter wins.
+
+**OpenRouter env vars:**
+
+- `USE_OPENROUTER` — set to `"true"` to enable
+- `OPENROUTER_API_KEY` — your OpenRouter API key (`sk-or-...`)
+- `OPENROUTER_MODEL` — model ID (default: `openrouter/moonshotai/kimi-k2`)
+
+The OpenRouter setup in `startGateway()` (src/server.js) backs up the original model to `config._openrouter.originalModel` and restores it when the flag is turned off.
+
 ### Authentication Flow
 
 The wrapper manages a **two-layer auth scheme**:

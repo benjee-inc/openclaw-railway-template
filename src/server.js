@@ -315,6 +315,20 @@ async function startGateway() {
         delete config.plugins.paths;
       }
 
+      // Clean blockrun auth profile, provider config, and env remnants
+      if (config.auth?.profiles?.["blockrun:default"]) {
+        delete config.auth.profiles["blockrun:default"];
+        console.log(`[clawrouter] Removed stale blockrun:default auth profile`);
+      }
+      if (config.models?.providers?.blockrun) {
+        delete config.models.providers.blockrun;
+        console.log(`[clawrouter] Removed stale models.providers.blockrun`);
+      }
+      if (config.env?.BLOCKRUN_API_KEY) {
+        delete config.env.BLOCKRUN_API_KEY;
+        console.log(`[clawrouter] Removed stale env.BLOCKRUN_API_KEY`);
+      }
+
       // Restore original model if we previously backed it up
       if (config._clawrouter?.originalModel) {
         const restored = config._clawrouter.originalModel;
@@ -325,6 +339,72 @@ async function startGateway() {
         if (config.agent) delete config.agent;
         delete config._clawrouter;
         console.log(`[clawrouter] Restored original model: ${restored}`);
+      }
+
+      // ── OpenRouter conditional setup ──
+      // Only when ClawRouter is NOT active (ClawRouter takes precedence).
+      const useOpenRouter = process.env.USE_OPENROUTER?.toLowerCase() === "true";
+      const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+
+      if (useOpenRouter && openRouterKey) {
+        const openRouterModel = process.env.OPENROUTER_MODEL?.trim() || "openrouter/moonshotai/kimi-k2";
+        console.log(`[openrouter] USE_OPENROUTER=true, configuring OpenRouter...`);
+
+        // Backup original agent model
+        const currentModel =
+          config.agents?.defaults?.model?.primary || config.agent?.model;
+        if (currentModel && currentModel !== openRouterModel) {
+          if (!config._openrouter) config._openrouter = {};
+          config._openrouter.originalModel = currentModel;
+          console.log(`[openrouter] Backed up original model: ${currentModel}`);
+        }
+
+        // Set agent model to OpenRouter model
+        if (!config.agents) config.agents = {};
+        if (!config.agents.defaults) config.agents.defaults = {};
+        if (!config.agents.defaults.model) config.agents.defaults.model = {};
+        config.agents.defaults.model.primary = openRouterModel;
+        if (config.agent) delete config.agent;
+        console.log(`[openrouter] Set agent model to ${openRouterModel}`);
+        console.log(`[openrouter] API key will be passed via OPENROUTER_API_KEY env var (native OpenClaw support)`);
+      } else if (!useOpenRouter) {
+        // Restore original model if we previously backed it up for OpenRouter
+        if (config._openrouter?.originalModel) {
+          const restored = config._openrouter.originalModel;
+          if (!config.agents) config.agents = {};
+          if (!config.agents.defaults) config.agents.defaults = {};
+          if (!config.agents.defaults.model) config.agents.defaults.model = {};
+          config.agents.defaults.model.primary = restored;
+          if (config.agent) delete config.agent;
+          delete config._openrouter;
+          console.log(`[openrouter] Restored original model: ${restored}`);
+        }
+      } else if (useOpenRouter && !openRouterKey) {
+        console.warn(`[openrouter] USE_OPENROUTER=true but OPENROUTER_API_KEY not set, skipping OpenRouter`);
+      }
+
+      // ── Safety net: detect orphaned provider models ──
+      // If both flags are off but the model still points to a disabled provider
+      // (e.g. backup was never created because the model was unset at enable time),
+      // reset to DEFAULT_MODEL env var or remove the model entirely so OpenClaw
+      // uses its built-in default for the configured auth provider.
+      const finalModel = config.agents?.defaults?.model?.primary;
+      const isOrphaned =
+        (finalModel === "blockrun/auto" && !useClawRouter) ||
+        (finalModel?.startsWith("openrouter/") && !useOpenRouter);
+      if (isOrphaned) {
+        const fallback = process.env.DEFAULT_MODEL?.trim();
+        if (fallback) {
+          config.agents.defaults.model.primary = fallback;
+          console.log(`[gateway] Orphaned model "${finalModel}" detected — reset to DEFAULT_MODEL: ${fallback}`);
+        } else {
+          // Remove the entire model section so OpenClaw fully defaults
+          delete config.agents.defaults.model;
+          console.log(`[gateway] Orphaned model "${finalModel}" detected — removed agents.defaults.model (OpenClaw will use built-in default)`);
+        }
+        // Clean up any leftover backup metadata
+        delete config._clawrouter;
+        delete config._openrouter;
       }
     }
 
@@ -386,6 +466,10 @@ async function startGateway() {
     // ClawRouter local server doesn't validate API keys, but OpenClaw
     // requires one for the blockrun provider. Set a placeholder.
     gatewayEnv.BLOCKRUN_API_KEY = "blockrun-local";
+  }
+  // Pass OpenRouter API key to gateway (OpenClaw reads it natively from env)
+  if (process.env.OPENROUTER_API_KEY?.trim()) {
+    gatewayEnv.OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY.trim();
   }
 
   gatewayProc = childProcess.spawn(OPENCLAW_NODE, clawArgs(args), {
