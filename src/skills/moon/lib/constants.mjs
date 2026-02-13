@@ -1,4 +1,4 @@
-// bags/lib/constants.mjs -- Addresses, ABIs, RPC URLs, API bases
+// moon/lib/constants.mjs -- Addresses, ABIs, RPC URLs, API bases
 
 import { parseAbi } from "viem";
 

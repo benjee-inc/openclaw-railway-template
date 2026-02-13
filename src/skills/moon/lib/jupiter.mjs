@@ -1,4 +1,4 @@
-// bags/lib/jupiter.mjs -- Quotes, token search, Shield safety
+// moon/lib/jupiter.mjs -- Quotes, token search, Shield safety
 // Uses lite-api.jup.ag (free) with fallback to api.jup.ag (requires JUPITER_API_KEY)
 
 import { WSOL } from "./constants.mjs";

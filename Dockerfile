@@ -99,8 +99,8 @@ COPY src ./src
 # Install custom skill CLIs
 RUN chmod +x /app/src/skills/x-api/x-api.mjs \
   && ln -sf /app/src/skills/x-api/x-api.mjs /usr/local/bin/x-api \
-  && chmod +x /app/src/skills/bags/bags.mjs \
-  && ln -sf /app/src/skills/bags/bags.mjs /usr/local/bin/bags
+  && chmod +x /app/src/skills/moon/moon.mjs \
+  && ln -sf /app/src/skills/moon/moon.mjs /usr/local/bin/moon
 
 ENV PORT=8080
 EXPOSE 8080

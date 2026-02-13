@@ -1,4 +1,4 @@
-// bags/lib/polymarket.mjs -- Polymarket CLOB SDK wrapper
+// moon/lib/polymarket.mjs -- Polymarket CLOB SDK wrapper
 // Markets on Polygon (chain 137). Bets in USDC. Order book via CLOB API.
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync, unlinkSync } from "node:fs";

@@ -1,4 +1,4 @@
-// bags/lib/swap.mjs -- Direct Jupiter swap execution + wallet utilities
+// moon/lib/swap.mjs -- Direct Jupiter swap execution + wallet utilities
 // No third-party custody. Uses SOLANA_PRIVATE_KEY for self-custody trading.
 
 import { Keypair, VersionedTransaction, PublicKey, Connection } from "@solana/web3.js";

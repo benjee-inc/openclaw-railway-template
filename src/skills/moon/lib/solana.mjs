@@ -1,4 +1,4 @@
-// bags/lib/solana.mjs -- Raydium, Pump.fun, PumpSwap, Meteora
+// moon/lib/solana.mjs -- Raydium, Pump.fun, PumpSwap, Meteora
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { readU64LE, readPublicKey } from "./helpers.mjs";

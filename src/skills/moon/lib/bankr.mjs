@@ -1,4 +1,4 @@
-// bags/lib/bankr.mjs -- Managed wallet trading via Bankr API
+// moon/lib/bankr.mjs -- Managed wallet trading via Bankr API
 
 import { BANKR_API } from "./constants.mjs";
 import { requireEnv } from "./helpers.mjs";

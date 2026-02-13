@@ -1,4 +1,4 @@
-// bags/lib/swap-base.mjs -- Base chain swap execution via Uniswap V2 Router
+// moon/lib/swap-base.mjs -- Base chain swap execution via Uniswap V2 Router
 // Self-custody using BASE_PRIVATE_KEY. Mirrors swap.mjs for Solana.
 
 import {

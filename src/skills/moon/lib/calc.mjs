@@ -1,4 +1,4 @@
-// bags/lib/calc.mjs -- Position sizing, Kelly criterion, goal calculator
+// moon/lib/calc.mjs -- Position sizing, Kelly criterion, goal calculator
 // Pure functions, no side effects, no imports from other lib modules.
 
 // ─── Target Position Calculator ─────────────────────────────────────────────

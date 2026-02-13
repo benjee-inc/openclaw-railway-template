@@ -1,4 +1,4 @@
-// bags/lib/commands.mjs -- All 28 command handlers (V3: autonomous trading intelligence)
+// moon/lib/commands.mjs -- All 28 command handlers (V3: autonomous trading intelligence)
 
 import { PublicKey } from "@solana/web3.js";
 import { out, parseFlag, hasFlag, normalizeChain } from "./helpers.mjs";
@@ -58,7 +58,7 @@ export async function cmdPool(args) {
   const chain = normalizeChain(args[0]);
   const addr = args[1];
   if (!chain || !addr) {
-    console.error("Usage: bags pool <chain> <address>");
+    console.error("Usage: moon pool <chain> <address>");
     process.exit(1);
   }
 
@@ -91,7 +91,7 @@ export async function cmdPool(args) {
 export async function cmdPump(args) {
   const mintAddr = args[0];
   if (!mintAddr) {
-    console.error("Usage: bags pump <mintAddress>");
+    console.error("Usage: moon pump <mintAddress>");
     process.exit(1);
   }
   const conn = getSolConnection();
@@ -101,7 +101,7 @@ export async function cmdPump(args) {
 export async function cmdNew(args) {
   const chain = normalizeChain(args[0]);
   if (!chain) {
-    console.error("Usage: bags new <chain> [--limit N] [--dex NAME]");
+    console.error("Usage: moon new <chain> [--limit N] [--dex NAME]");
     process.exit(1);
   }
 
@@ -123,7 +123,7 @@ export async function cmdPrice(args) {
   const chain = normalizeChain(args[0]);
   const tokenAddr = args[1];
   if (!chain || !tokenAddr) {
-    console.error("Usage: bags price <chain> <tokenAddress>");
+    console.error("Usage: moon price <chain> <tokenAddress>");
     process.exit(1);
   }
 
@@ -235,7 +235,7 @@ export async function cmdSearch(args) {
   const chain = normalizeChain(args[0]);
   const tokenAddr = args[1];
   if (!chain || !tokenAddr) {
-    console.error("Usage: bags search <chain> <tokenAddress>");
+    console.error("Usage: moon search <chain> <tokenAddress>");
     process.exit(1);
   }
 
@@ -255,7 +255,7 @@ export async function cmdSearch(args) {
 export async function cmdQuote(args) {
   const chain = normalizeChain(args[0]);
   if (chain !== "sol") {
-    console.error("Usage: bags quote sol <inputMint> <outputMint> <amount>");
+    console.error("Usage: moon quote sol <inputMint> <outputMint> <amount>");
     console.error("Note: Jupiter quotes are Solana-only.");
     process.exit(1);
   }
@@ -264,7 +264,7 @@ export async function cmdQuote(args) {
   const outputMint = args[2];
   const amount = args[3];
   if (!inputMint || !outputMint || !amount) {
-    console.error("Usage: bags quote sol <inputMint> <outputMint> <amount>");
+    console.error("Usage: moon quote sol <inputMint> <outputMint> <amount>");
     process.exit(1);
   }
 
@@ -291,7 +291,7 @@ export async function cmdQuote(args) {
 export async function cmdToken(args) {
   const query = args.join(" ");
   if (!query) {
-    console.error("Usage: bags token <query>");
+    console.error("Usage: moon token <query>");
     process.exit(1);
   }
 
@@ -302,7 +302,7 @@ export async function cmdToken(args) {
 export async function cmdSafety(args) {
   const mint = args[0];
   if (!mint) {
-    console.error("Usage: bags safety <mint>");
+    console.error("Usage: moon safety <mint>");
     process.exit(1);
   }
 
@@ -315,14 +315,14 @@ export async function cmdSafety(args) {
 export async function cmdMeta(args) {
   const chain = normalizeChain(args[0]);
   if (chain !== "sol") {
-    console.error("Usage: bags meta sol <mint>");
+    console.error("Usage: moon meta sol <mint>");
     console.error("Note: DAS metadata is Solana-only.");
     process.exit(1);
   }
 
   const mint = args[1];
   if (!mint) {
-    console.error("Usage: bags meta sol <mint>");
+    console.error("Usage: moon meta sol <mint>");
     process.exit(1);
   }
 
@@ -333,14 +333,14 @@ export async function cmdMeta(args) {
 export async function cmdHolders(args) {
   const chain = normalizeChain(args[0]);
   if (chain !== "sol") {
-    console.error("Usage: bags holders sol <mint> [--limit N]");
+    console.error("Usage: moon holders sol <mint> [--limit N]");
     console.error("Note: Holder analysis is Solana-only.");
     process.exit(1);
   }
 
   const mint = args[1];
   if (!mint) {
-    console.error("Usage: bags holders sol <mint> [--limit N]");
+    console.error("Usage: moon holders sol <mint> [--limit N]");
     process.exit(1);
   }
 
@@ -352,14 +352,14 @@ export async function cmdHolders(args) {
 export async function cmdHistory(args) {
   const chain = normalizeChain(args[0]);
   if (chain !== "sol") {
-    console.error("Usage: bags history sol <address> [--limit N]");
+    console.error("Usage: moon history sol <address> [--limit N]");
     console.error("Note: Enhanced transaction history is Solana-only.");
     process.exit(1);
   }
 
   const addr = args[1];
   if (!addr) {
-    console.error("Usage: bags history sol <address> [--limit N]");
+    console.error("Usage: moon history sol <address> [--limit N]");
     process.exit(1);
   }
 
@@ -378,7 +378,7 @@ export async function cmdWallet(args) {
     const positions = await getBasePositions().catch(() => []);
     out({ ...wallet, tokenCount: positions.length, positions });
   } else {
-    // Default: Solana (backward compat — "bags wallet" with no arg = sol)
+    // Default: Solana (backward compat — "moon wallet" with no arg = sol)
     const wallet = await getWalletInfo();
     const positions = await getPositions().catch(() => []);
     out({ ...wallet, tokenCount: positions.length, positions });
@@ -390,7 +390,7 @@ export async function cmdBuy(args) {
   const token = args[1];
   const amount = args[2];
   if (!chain || !token || !amount) {
-    console.error("Usage: bags buy <chain> <token> <amount> [--slippage N] [--note TEXT] [--narrative TAG]");
+    console.error("Usage: moon buy <chain> <token> <amount> [--slippage N] [--note TEXT] [--narrative TAG]");
     console.error("Amount is in SOL (Solana) or ETH (Base).");
     process.exit(1);
   }
@@ -463,7 +463,7 @@ export async function cmdSell(args) {
   const token = args[1];
   const amount = args[2];
   if (!chain || !token || !amount) {
-    console.error("Usage: bags sell <chain> <token> <amount|all> [--slippage N] [--note TEXT]");
+    console.error("Usage: moon sell <chain> <token> <amount|all> [--slippage N] [--note TEXT]");
     console.error("Amount is in tokens (or 'all').");
     process.exit(1);
   }
@@ -592,7 +592,7 @@ export async function cmdScan(args) {
   const chain = normalizeChain(args[0]);
   if (chain && chain !== "sol") {
     console.error("Error: scan is currently Solana-only.");
-    console.error("Usage: bags scan sol [--limit N]");
+    console.error("Usage: moon scan sol [--limit N]");
     process.exit(1);
   }
 
@@ -659,7 +659,7 @@ async function journalAdd(args) {
   const price = Number(args[4]);
 
   if (!type || !chain || !mint || isNaN(amount) || isNaN(price)) {
-    console.error("Usage: bags journal add <buy|sell> <chain> <mint> <amount> <price> [--note TEXT] [--narrative TAG]");
+    console.error("Usage: moon journal add <buy|sell> <chain> <mint> <amount> <price> [--note TEXT] [--narrative TAG]");
     process.exit(1);
   }
 
@@ -715,7 +715,7 @@ export async function cmdWatch(args) {
 async function watchAdd(args) {
   const mint = args[0];
   if (!mint) {
-    console.error("Usage: bags watch add <mint> [--target-buy PRICE] [--target-sell PRICE] [--narrative TAG] [--note TEXT]");
+    console.error("Usage: moon watch add <mint> [--target-buy PRICE] [--target-sell PRICE] [--narrative TAG] [--note TEXT]");
     process.exit(1);
   }
 
@@ -757,7 +757,7 @@ async function watchAdd(args) {
 async function watchRemove(args) {
   const mint = args[0];
   if (!mint) {
-    console.error("Usage: bags watch remove <mint>");
+    console.error("Usage: moon watch remove <mint>");
     process.exit(1);
   }
 
@@ -897,7 +897,7 @@ export async function cmdCalc(args) {
   if (sub === "target") return calcTarget(args.slice(1));
   if (sub === "mcap") return calcMcapCmd(args.slice(1));
   if (sub === "size") return calcSizeCmd(args.slice(1));
-  console.error("Usage: bags calc <target|mcap|size> ...");
+  console.error("Usage: moon calc <target|mcap|size> ...");
   process.exit(1);
 }
 
@@ -907,7 +907,7 @@ function calcTarget(args) {
   const target = Number(args[2]);
 
   if (isNaN(price) || isNaN(supply) || isNaN(target)) {
-    console.error("Usage: bags calc target <currentPrice> <totalSupply> <targetUsd>");
+    console.error("Usage: moon calc target <currentPrice> <totalSupply> <targetUsd>");
     process.exit(1);
   }
 
@@ -921,7 +921,7 @@ function calcMcapCmd(args) {
   const target = Number(args[2]);
 
   if (isNaN(held) || isNaN(supply) || isNaN(target)) {
-    console.error("Usage: bags calc mcap <tokensHeld> <totalSupply> <targetUsd>");
+    console.error("Usage: moon calc mcap <tokensHeld> <totalSupply> <targetUsd>");
     process.exit(1);
   }
 
@@ -936,7 +936,7 @@ function calcSizeCmd(args) {
   const stopLoss = parseFlag(args, "--stop-loss", null);
 
   if (isNaN(portfolio) || isNaN(riskPct) || isNaN(price)) {
-    console.error("Usage: bags calc size <portfolioValue> <riskPct> <entryPrice> [--stop-loss PRICE]");
+    console.error("Usage: moon calc size <portfolioValue> <riskPct> <entryPrice> [--stop-loss PRICE]");
     process.exit(1);
   }
 
@@ -1063,13 +1063,13 @@ export async function cmdReview(args) {
 export async function cmdMarket(args) {
   const sub = args[0];
   if (!sub) {
-    console.error("Usage: bags market search <query> | bags market <conditionId> | bags market positions | bags market orders | bags market cancel <id|all> | bags market trades");
+    console.error("Usage: moon market search <query> | moon market <conditionId> | moon market positions | moon market orders | moon market cancel <id|all> | moon market trades");
     process.exit(1);
   }
 
   if (sub === "search") {
     const query = args.slice(1).join(" ");
-    if (!query) { console.error("Usage: bags market search <query>"); process.exit(1); }
+    if (!query) { console.error("Usage: moon market search <query>"); process.exit(1); }
     const limit = parseInt(parseFlag(args, "--limit", "20"), 10);
     const results = await searchMarkets(query, limit);
     out({ command: "market search", query, count: results.length, markets: results });
@@ -1091,7 +1091,7 @@ export async function cmdMarket(args) {
 
   if (sub === "cancel") {
     const target = args[1];
-    if (!target) { console.error("Usage: bags market cancel <orderId|all>"); process.exit(1); }
+    if (!target) { console.error("Usage: moon market cancel <orderId|all>"); process.exit(1); }
     if (target === "all") {
       const result = await cancelAllOrders();
       out({ command: "market cancel all", ...result });
@@ -1136,7 +1136,7 @@ export async function cmdMarket(args) {
 export async function cmdOdds(args) {
   const conditionId = args[0];
   if (!conditionId) {
-    console.error("Usage: bags odds <conditionId>");
+    console.error("Usage: moon odds <conditionId>");
     process.exit(1);
   }
 
@@ -1178,7 +1178,7 @@ export async function cmdBet(args) {
   const usdcAmt = args[2];
 
   if (!conditionId || !outcome || !usdcAmt) {
-    console.error("Usage: bags bet <conditionId> <yes|no> <usdcAmount> [--limit PRICE] [--note TEXT] [--narrative TAG]");
+    console.error("Usage: moon bet <conditionId> <yes|no> <usdcAmount> [--limit PRICE] [--note TEXT] [--narrative TAG]");
     process.exit(1);
   }
 
@@ -1302,7 +1302,7 @@ export async function cmdRedeem(args) {
   }
 
   if (!sub) {
-    console.error("Usage: bags redeem <conditionId> | bags redeem list");
+    console.error("Usage: moon redeem <conditionId> | moon redeem list");
     process.exit(1);
   }
 

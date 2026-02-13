@@ -1,4 +1,4 @@
-// bags/lib/base.mjs -- Base EVM functions (Uniswap V2, Aerodrome)
+// moon/lib/base.mjs -- Base EVM functions (Uniswap V2, Aerodrome)
 
 import { createPublicClient, http, formatUnits, getAddress } from "viem";
 import { base } from "viem/chains";

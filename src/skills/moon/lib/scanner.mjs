@@ -1,4 +1,4 @@
-// bags/lib/scanner.mjs -- Token discovery + scoring engine
+// moon/lib/scanner.mjs -- Token discovery + scoring engine
 
 import { getSolConnection, getSolNewPools } from "./solana.mjs";
 import { getTokenHolders, getEnhancedTransactions } from "./helius.mjs";

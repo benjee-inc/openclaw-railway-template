@@ -1,4 +1,4 @@
-// bags/lib/state.mjs -- Persistent JSON state manager
+// moon/lib/state.mjs -- Persistent JSON state manager
 // Atomic writes (write .tmp -> rename). Auto-create on first use.
 
 import { readFileSync, writeFileSync, mkdirSync, renameSync, existsSync } from "node:fs";
@@ -23,9 +23,9 @@ const DEFAULT_STATE = {
 // ─── Path Resolution ────────────────────────────────────────────────────────
 
 export function getStateDir() {
-  if (process.env.BAGS_STATE_DIR) return process.env.BAGS_STATE_DIR;
-  if (existsSync("/data")) return "/data/.bags";
-  return join(homedir(), ".bags");
+  if (process.env.MOON_STATE_DIR) return process.env.MOON_STATE_DIR;
+  if (existsSync("/data")) return "/data/.moon";
+  return join(homedir(), ".moon");
 }
 
 function statePath() {

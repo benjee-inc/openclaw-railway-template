@@ -1,4 +1,4 @@
-// bags/lib/helius.mjs -- DAS API, token holders, enhanced transactions
+// moon/lib/helius.mjs -- DAS API, token holders, enhanced transactions
 
 import { requireEnv } from "./helpers.mjs";
 

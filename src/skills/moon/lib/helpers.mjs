@@ -1,4 +1,4 @@
-// bags/lib/helpers.mjs -- Shared utility functions
+// moon/lib/helpers.mjs -- Shared utility functions
 
 import { PublicKey } from "@solana/web3.js";
 
