@@ -15,5 +15,11 @@
     "express": "^5.1.0",
     "http-proxy": "^1.18.1",
     "tar": "^7.5.4"
+  },
+  "devDependencies": {
+    "@polymarket/clob-client": "^5.2.1",
+    "@solana/web3.js": "^1.98.4",
+    "ethers": "^5.8.0",
+    "viem": "^2.45.3"
   }
 }
