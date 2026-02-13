@@ -1,7 +1,7 @@
 ---
 name: bags
 description: Autonomous on-chain trading intelligence. Research, trade, scan, journal, watchlist, position sizing, and goal tracking on Base, Solana, and Polymarket. Learns from trades and targets $1M.
-metadata: { "openclaw": { "emoji": "\U0001F4B0", "requires": { "bins": ["bags"], "env": [] } } }
+metadata: { "openclaw": { "emoji": "💰", "requires": { "bins": ["bags"], "env": [] } } }
 ---
 
 # bags -- Autonomous Trading Intelligence

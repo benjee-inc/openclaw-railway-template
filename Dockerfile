@@ -119,7 +119,8 @@ else \
   echo '[boot] Cleanup done'; \
 fi && \
 echo '[boot] Installing custom skills...' && \
-mkdir -p /data/.openclaw/skills && \
+mkdir -p /data/.openclaw/skills /data/workspace/skills && \
 cp -r /app/src/skills/* /data/.openclaw/skills/ 2>/dev/null && \
-echo '[boot] Custom skills installed' && \
+cp -r /app/src/skills/* /data/workspace/skills/ 2>/dev/null && \
+echo '[boot] Custom skills installed to state + workspace' && \
 node src/server.js"]
