@@ -102,12 +102,33 @@ RUN chmod +x /app/src/skills/x-api/x-api.mjs \
   && chmod +x /app/src/skills/moon/moon.mjs \
   && ln -sf /app/src/skills/moon/moon.mjs /usr/local/bin/moon
 
+# Debug: show where OpenClaw stores built-in skills (visible in Railway build logs)
+RUN echo "=== OpenClaw SKILL.md locations ===" \
+  && find /openclaw -name "SKILL.md" -type f 2>/dev/null; \
+  echo "=== /openclaw top-level ===" && ls /openclaw/ 2>/dev/null; true
+
+# Copy custom skills into OpenClaw's source tree so the gateway discovers them.
+# Auto-detect the skills root by finding a built-in SKILL.md and going two levels up.
+RUN SKILL_MD=$(find /openclaw -name "SKILL.md" -type f 2>/dev/null | head -1) && \
+  if [ -n "$SKILL_MD" ]; then \
+    SKILLS_ROOT=$(dirname "$(dirname "$SKILL_MD")") && \
+    echo "[skills] Auto-detected skills root: $SKILLS_ROOT" && \
+    cp -r /app/src/skills/* "$SKILLS_ROOT/" && \
+    echo "[skills] Installed custom skills:" && ls "$SKILLS_ROOT/"; \
+  else \
+    echo "[skills] No built-in SKILL.md found in /openclaw" && \
+    echo "[skills] Trying fallback: /openclaw/skills/" && \
+    mkdir -p /openclaw/skills && \
+    cp -r /app/src/skills/* /openclaw/skills/ && \
+    echo "[skills] Installed to /openclaw/skills/:" && ls /openclaw/skills/; \
+  fi
+
 ENV PORT=8080
 EXPOSE 8080
 
 # Clean ClawRouter plugin artifacts from persistent volume and home dir.
 # ONLY search /data and /root — do NOT search /openclaw (would break @buape/carbon/dist/src/plugins).
-# Copy custom skills to workspace so OpenClaw can discover them.
+# Copy custom skills to multiple discovery paths + clean stale bags dirs.
 # Then start the server which eagerly boots the gateway via direct JSON token sync (no CLI).
 CMD ["sh", "-c", "\
 if [ \"$USE_CLAWROUTER\" = \"true\" ]; then \
@@ -118,9 +139,15 @@ else \
   find /data /root -maxdepth 6 \\( -iname '*clawrouter*' -o -iname '*blockrun*' \\) 2>/dev/null | while read f; do echo \"[boot] rm artifact: $f\"; rm -rf \"$f\"; done && \
   echo '[boot] Cleanup done'; \
 fi && \
-echo '[boot] Installing custom skills...' && \
-mkdir -p /data/.openclaw/skills /data/workspace/skills && \
+echo '[boot] Cleaning stale bags skill from persistent volume...' && \
+rm -rf /data/.openclaw/skills/bags /data/workspace/skills/bags /root/.openclaw/skills/bags 2>/dev/null; \
+echo '[boot] Installing custom skills to all discovery paths...' && \
+mkdir -p /data/.openclaw/skills /data/workspace/skills /root/.openclaw/skills && \
 cp -r /app/src/skills/* /data/.openclaw/skills/ 2>/dev/null && \
 cp -r /app/src/skills/* /data/workspace/skills/ 2>/dev/null && \
-echo '[boot] Custom skills installed to state + workspace' && \
+cp -r /app/src/skills/* /root/.openclaw/skills/ 2>/dev/null && \
+echo '[boot] Custom skills installed' && \
+echo '[boot] Built-in SKILL.md files:' && find /openclaw -name 'SKILL.md' -type f 2>/dev/null | head -10 && \
+echo '[boot] Custom skills in workspace:' && ls /data/workspace/skills/ 2>/dev/null && \
+echo '[boot] Custom skills in home:' && ls /root/.openclaw/skills/ 2>/dev/null && \
 node src/server.js"]

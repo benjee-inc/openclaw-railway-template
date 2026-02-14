@@ -442,6 +442,44 @@ async function startGateway() {
 
   console.log(`[gateway] ========== TOKEN SYNC COMPLETE ==========`);
 
+  // ── Custom skill instructions ──
+  // Write skill SKILL.md content to workspace CLAUDE.md so the agent loads them
+  // as system prompt context. This is a reliable fallback regardless of how
+  // OpenClaw discovers skills internally (built-in skills are in the source tree).
+  try {
+    const appSkillsDir = path.join(process.cwd(), "src", "skills");
+    if (fs.existsSync(appSkillsDir)) {
+      let skillInstructions = "";
+      for (const name of fs.readdirSync(appSkillsDir)) {
+        const skillMd = path.join(appSkillsDir, name, "SKILL.md");
+        if (fs.existsSync(skillMd)) {
+          const content = fs.readFileSync(skillMd, "utf8");
+          // Strip YAML frontmatter (--- to ---), keep markdown body
+          const body = content.replace(/^---[\s\S]*?---\n*/, "");
+          skillInstructions += body + "\n\n";
+          console.log(`[skills] Loaded skill doc: ${name}`);
+        }
+      }
+      if (skillInstructions.trim()) {
+        fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
+        const claudeMdPath = path.join(WORKSPACE_DIR, "CLAUDE.md");
+        const MARKER = "<!-- CUSTOM_SKILLS -->";
+        let existing = "";
+        try { existing = fs.readFileSync(claudeMdPath, "utf8"); } catch {}
+        // Remove old skills section (everything from marker to end)
+        const markerIdx = existing.indexOf(MARKER);
+        if (markerIdx >= 0) {
+          existing = existing.substring(0, markerIdx);
+        }
+        const finalContent = existing.trimEnd() + "\n\n" + MARKER + "\n\n" + skillInstructions;
+        fs.writeFileSync(claudeMdPath, finalContent, "utf8");
+        console.log(`[skills] Wrote ${skillInstructions.length} chars of skill docs to ${claudeMdPath}`);
+      }
+    }
+  } catch (err) {
+    console.error(`[skills] Failed to install skill docs: ${err}`);
+  }
+
   const args = [
     "gateway",
     "run",
