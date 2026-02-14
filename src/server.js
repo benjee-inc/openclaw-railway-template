@@ -363,12 +363,22 @@ async function startGateway() {
           console.log(`[openrouter] Backed up original model: ${currentModel}`);
         }
 
-        // Set agent model to OpenRouter model
+        // Set agent model to OpenRouter model — update ALL config locations.
+        // Per-agent overrides (e.g. agents.main.model.primary set via Control UI)
+        // take precedence over agents.defaults, so we must update those too.
         if (!config.agents) config.agents = {};
         if (!config.agents.defaults) config.agents.defaults = {};
         if (!config.agents.defaults.model) config.agents.defaults.model = {};
         config.agents.defaults.model.primary = openRouterModel;
         if (config.agent) delete config.agent;
+        // Also override per-agent model configs (set via Control UI or API)
+        for (const [agentId, agentCfg] of Object.entries(config.agents)) {
+          if (agentId === "defaults" || !agentCfg || typeof agentCfg !== "object") continue;
+          if (agentCfg.model?.primary) {
+            console.log(`[openrouter] Overriding agent '${agentId}' model: ${agentCfg.model.primary} → ${openRouterModel}`);
+            agentCfg.model.primary = openRouterModel;
+          }
+        }
         console.log(`[openrouter] Set agent model to ${openRouterModel}`);
         console.log(`[openrouter] API key will be passed via OPENROUTER_API_KEY env var (native OpenClaw support)`);
       } else if (!useOpenRouter) {

@@ -102,10 +102,14 @@ RUN chmod +x /app/src/skills/x-api/x-api.mjs \
   && chmod +x /app/src/skills/moon/moon.mjs \
   && ln -sf /app/src/skills/moon/moon.mjs /usr/local/bin/moon
 
-# Debug: show where OpenClaw stores built-in skills (visible in Railway build logs)
+# Debug: show where OpenClaw stores built-in skills and model registry (visible in Railway build logs)
 RUN echo "=== OpenClaw SKILL.md locations ===" \
   && find /openclaw -name "SKILL.md" -type f 2>/dev/null; \
-  echo "=== /openclaw top-level ===" && ls /openclaw/ 2>/dev/null; true
+  echo "=== /openclaw top-level ===" && ls /openclaw/ 2>/dev/null; \
+  echo "=== OpenClaw model registry files (kimi-k2 references) ===" \
+  && grep -rl "kimi-k2" /openclaw/dist/ 2>/dev/null | head -10; \
+  echo "=== OpenClaw model registry files (openrouter references) ===" \
+  && grep -rl "openrouter" /openclaw/dist/ 2>/dev/null | head -10; true
 
 # Copy custom skills into OpenClaw's source tree so the gateway discovers them.
 # Auto-detect the skills root by finding a built-in SKILL.md and going two levels up.
