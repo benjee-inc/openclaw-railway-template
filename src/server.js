@@ -347,7 +347,11 @@ async function startGateway() {
       const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
 
       if (useOpenRouter && openRouterKey) {
-        const openRouterModel = process.env.OPENROUTER_MODEL?.trim() || "openrouter/moonshotai/kimi-k2";
+        let openRouterModel = process.env.OPENROUTER_MODEL?.trim() || "moonshotai/kimi-k2";
+        // OpenClaw requires the openrouter/ prefix for model routing
+        if (!openRouterModel.startsWith("openrouter/")) {
+          openRouterModel = "openrouter/" + openRouterModel;
+        }
         console.log(`[openrouter] USE_OPENROUTER=true, configuring OpenRouter...`);
 
         // Backup original agent model
